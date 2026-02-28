@@ -1,0 +1,21 @@
+{
+  "name": "3dcreator_bygem",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node -e \"require('express')().use(require('express').static('public')).listen(8000, () => console.log('Interactive viewer at http://localhost:8000'))\"",
+    "render": "node render.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "puppeteer": "^24.37.5"
+  }
+}
