@@ -1,0 +1,12 @@
+# Image Processing
+Pillow
+
+# Gemini API (Recommended for this script)
+google-genai
+
+# Google Cloud Vision (Optional, if using the older API)
+google-cloud-vision
+
+opencv-python>=4.8.0
+numpy>=1.24.0
+matplotlib>=3.7.0
