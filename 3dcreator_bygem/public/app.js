@@ -128,6 +128,122 @@ function init() {
         }
     });
 
+    // Modal Listeners
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalOverlay) {
+        document.getElementById('closeModalBtn').addEventListener('click', () => {
+            modalOverlay.classList.add('hidden');
+        });
+
+        const settingsPanel = document.getElementById('settingsPanel');
+        document.getElementById('toggleSettingsBtn').addEventListener('click', () => {
+            settingsPanel.classList.toggle('visible');
+        });
+
+        // Default System Prompt
+        const defaultSystemPrompt = `Transform this simple low-poly 3D scene into a realistic interior render while strictly preserving the exact camera angle, perspective, composition, room geometry, wall positions, openings, and spatial layout from the input image.
+The input image is a layout and viewpoint guide. Do not change the viewpoint. Do not rotate the camera. Do not zoom in or out. Do not redesign the floor plan. Keep all walls, doors, windows, and object placements aligned to the input scene.
+Create it as a realistic {ROOM_TYPE} inside an apartment. The final image should look like a believable real interior photograph with:
+
+realistic materials
+natural lighting
+proper depth and shadows
+clean proportions
+modern, tasteful interior design
+functional apartment-scale furnishing
+Important spatial rules:
+
+Brown shapes are doors
+treat all simple geometric masses as layout guides
+preserve the relative size and position of all major forms
+keep walkable space logical and realistic
+keep the room dimensions consistent with the source image
+maintain the same viewing direction and framing
+Style rules:
+
+modern
+elegant but believable
+not overly luxurious unless specified
+realistic textures such as wood, stone, painted walls, metal, glass, fabric, ceramic
+visually coherent color palette
+apartment interior, not a showroom, not a fantasy scene
+Quality target:
+photorealistic interior rendering, realistic global illumination, detailed but natural materials, architecturally believable, high realism.
+Negative instructions:
+
+do not change the angle
+do not invent a different layout
+do not move doors/windows
+do not add impossible architecture
+do not create a wide-angle distortion unless already implied by the input
+do not turn this into a stylized illustration
+do not make it look like a game environment
+do not ignore the block geometry of the source scene`;
+
+        // Load saved system prompt or use default
+        const savedSysPrompt = localStorage.getItem('geminiSystemPrompt');
+        if (savedSysPrompt) {
+            document.getElementById('geminiSystemPrompt').value = savedSysPrompt;
+        } else {
+            document.getElementById('geminiSystemPrompt').value = defaultSystemPrompt;
+        }
+
+        document.getElementById('geminiEnhanceBtn').addEventListener('click', async () => {
+            const sysPrompt = document.getElementById('geminiSystemPrompt').value;
+            const userPrompt = document.getElementById('geminiUserPrompt').value;
+            const imageSrc = document.getElementById('screenshotPreview').src;
+            const btn = document.getElementById('geminiEnhanceBtn');
+            const responseContainer = document.getElementById('geminiResponseContainer');
+            const responseText = document.getElementById('geminiResponseText');
+            const responseImage = document.getElementById('geminiResponseImage');
+            
+            // Save system prompt
+            localStorage.setItem('geminiSystemPrompt', sysPrompt);
+
+            btn.innerText = '✨ Enhancing...';
+            btn.disabled = true;
+            responseContainer.classList.add('hidden');
+            responseText.classList.add('hidden');
+            responseImage.classList.add('hidden');
+            responseText.innerText = '';
+            responseImage.src = '';
+
+            try {
+                const res = await fetch('/api/enhance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        systemPrompt: sysPrompt,
+                        userPrompt: userPrompt,
+                        image: imageSrc
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Server error occurred');
+                }
+
+                if (data.isImage) {
+                    responseImage.src = data.result;
+                    responseImage.classList.remove('hidden');
+                } else {
+                    responseText.innerText = data.result;
+                    responseText.classList.remove('hidden');
+                }
+                responseContainer.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Error:", error);
+                alert(`Failed: ${error.message}`);
+            } finally {
+                btn.innerText = '✨ Gemini Enhance';
+                btn.disabled = false;
+            }
+        });
+    }
+
     renderer.domElement.addEventListener('mousemove', (e) => {
         if (isDragging) {
             const deltaX = e.offsetX - previousMousePosition.x;
@@ -202,10 +318,13 @@ function exportScreenshot() {
     renderer.render(scene, camera);
     const dataURL = renderer.domElement.toDataURL('image/png');
     
-    const link = document.createElement('a');
-    link.href = dataURL;
-    link.download = 'floor_plan_screenshot.png';
-    link.click();
+    const previewImg = document.getElementById('screenshotPreview');
+    const modalOverlay = document.getElementById('modal-overlay');
+    
+    if (previewImg && modalOverlay) {
+        previewImg.src = dataURL;
+        modalOverlay.classList.remove('hidden');
+    }
 }
 
 function parsePolygons(data) {

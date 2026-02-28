@@ -9,7 +9,21 @@
     button { margin-top: 10px; padding: 8px; cursor: pointer; width: 100%; }
     input[type="file"], input[type="number"] { margin-top: 5px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
     hr { margin: 15px 0; border: 0; border-top: 1px solid #ccc; }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
+    
+    #modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100;
+    }
+    #modal-content {
+      background: white; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px;
+      width: 90vw; max-width: 1000px; max-height: 90vh; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      overflow-y: auto;
+    }
+    #screenshotPreview { width: 100%; max-height: 50vh; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: #000; }
+    #settingsPanel { display: none; margin-top: 5px; padding: 15px; background: #f0f0f0; border-radius: 8px; border: 1px solid #ccc; flex-shrink: 0; }
+    #settingsPanel.visible { display: block; }
+    .action-row { display: flex; gap: 10px; align-items: center; width: 100%; flex-wrap: wrap; flex-shrink: 0; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -45,6 +59,36 @@
       <button id="exportBtn" style="background: #4CAF50; color: white; border: none; font-weight: bold;">Export Standard Render</button>
     </div>
   </div>
+  
+  <div id="modal-overlay" class="hidden">
+    <div id="modal-content">
+      <h3 style="margin: 0; color: #333;">Screenshot Preview</h3>
+      <img id="screenshotPreview" src="" alt="Screenshot">
+      
+      <div id="settingsPanel">
+        <h4 style="margin-top: 0; color: #333;">Gemini Settings</h4>
+        <label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold;">System Prompt (Instructions for Gemini):</label>
+        <textarea id="geminiSystemPrompt" rows="4" style="width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;" placeholder="e.g. You are an expert interior designer. Transform this blockout into a highly realistic architectural render..."></textarea>
+        <p style="font-size: 12px; color: #666; margin-top: 5px;">This prompt sets the overall behavior and style for the enhancement.</p>
+      </div>
+
+      <div class="action-row">
+        <div style="flex-grow: 1; display: flex; align-items: center; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px; background: #fafafa; min-width: 250px;">
+           <button id="toggleSettingsBtn" style="background: none; border: none; font-size: 18px; padding: 5px; cursor: pointer; color: #555; width: auto; margin: 0;" title="Toggle System Settings">⚙️</button>
+           <input type="text" id="geminiUserPrompt" placeholder="Additional user prompt (e.g. 'Make it a cozy wooden cabin')..." style="border: none; outline: none; flex-grow: 1; padding: 10px; margin: 0; background: transparent; min-width: 150px;">
+        </div>
+        <button id="geminiEnhanceBtn" style="background: linear-gradient(45deg, #9c27b0, #3f51b5); color: white; border: none; padding: 10px 20px; font-weight: bold; width: auto; margin: 0; border-radius: 4px; white-space: nowrap;">✨ Gemini Enhance</button>
+        <button id="closeModalBtn" style="background: #ddd; color: #333; border: none; padding: 10px 15px; width: auto; margin: 0; border-radius: 4px;">Close</button>
+      </div>
+      
+      <div id="geminiResponseContainer" class="hidden" style="margin-top: 10px;">
+        <label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold;">Gemini Output:</label>
+        <div id="geminiResponseText" style="width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #9c27b0; border-radius: 4px; background: #fdf5ff; white-space: pre-wrap; font-family: sans-serif; font-size: 14px; max-height: 200px; overflow-y: auto;"></div>
+        <img id="geminiResponseImage" class="hidden" src="" style="width: 100%; max-height: 400px; object-fit: contain; border: 1px solid #9c27b0; border-radius: 4px; margin-top: 10px;">
+      </div>
+    </div>
+  </div>
+
   <div id="canvas-container"></div>
   <script src="app.js"></script>
 </body>
