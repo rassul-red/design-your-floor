@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Creator UI</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f2f1ed;
+        --panel: #ffffff;
+        --ink: #1a1a1a;
+        --muted: #5d5d5d;
+        --line: #d7d5cf;
+        --accent: #005f73;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 20% 10%, #f9f7f1, var(--bg));
+        color: var(--ink);
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        width: 100%;
+        height: 100%;
+        gap: 10px;
+        padding: 10px;
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        overflow: auto;
+      }
+      .viewport {
+        position: relative;
+        background: #efece3;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .group {
+        margin-bottom: 14px;
+      }
+      .group h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      input,
+      button {
+        width: 100%;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        padding: 8px 10px;
+        background: #fff;
+        font-size: 13px;
+      }
+      input[type="file"] {
+        padding: 5px;
+      }
+      button {
+        cursor: pointer;
+        border-color: #0b5262;
+        background: linear-gradient(180deg, #0d7288, var(--accent));
+        color: #fff;
+        font-weight: 600;
+      }
+      button.secondary {
+        border-color: var(--line);
+        background: #fff;
+        color: var(--ink);
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      #planCanvas {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+      .status {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        background: #f7f6f2;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      @media (max-width: 980px) {
+        .layout {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div class="panel">
+        <div class="group">
+          <h3>Inputs</h3>
+          <label>Plan JSON</label>
+          <input id="planFile" type="file" accept=".json,application/json" />
+          <label>Furniture JSON (optional)</label>
+          <input id="furnitureFile" type="file" accept=".json,application/json" />
+          <label>Layout image (optional, camera picking overlay)</label>
+          <input id="layoutImageFile" type="file" accept="image/*" />
+          <button id="buildBtn">Build / Refresh 3D</button>
+        </div>
+
+        <div class="group">
+          <h3>Camera (plan space)</h3>
+          <div class="row">
+            <div>
+              <label>camera x</label>
+              <input id="cameraX" type="number" step="1" value="120" />
+            </div>
+            <div>
+              <label>camera y</label>
+              <input id="cameraY" type="number" step="1" value="180" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>heading deg</label>
+              <input id="headingDeg" type="number" step="1" value="45" />
+            </div>
+            <div>
+              <label>pitch deg</label>
+              <input id="pitchDeg" type="number" step="1" value="-12" />
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>fov deg</label>
+              <input id="fovDeg" type="number" step="1" value="60" />
+            </div>
+            <div>
+              <label>camera h (m)</label>
+              <input id="cameraHeight" type="number" step="0.1" value="1.8" />
+            </div>
+          </div>
+          <button id="centerCameraBtn" class="secondary">Set Camera To Plan Center</button>
+          <button id="exportBtn" class="secondary">Export View PNG</button>
+          <div class="hint">Tip: click the 2D plan below to place camera. Drag in 3D view to orbit.</div>
+        </div>
+
+        <div class="group">
+          <h3>2D Camera Picker</h3>
+          <canvas id="planCanvas" width="320" height="220"></canvas>
+        </div>
+
+        <div class="group">
+          <h3>Status</h3>
+          <div id="status" class="status">Load a plan JSON to begin.</div>
+        </div>
+      </div>
+      <div id="viewport" class="viewport"></div>
+    </div>
+
+    <script type="module" src="./ui.js"></script>
+  </body>
+</html>

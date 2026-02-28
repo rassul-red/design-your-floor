@@ -1,0 +1,24 @@
+{
+  "name": "floor-plan-3dcreator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build:web": "esbuild web/renderer.ts --bundle --format=esm --outfile=dist/renderer.js",
+    "build:ui": "esbuild web/ui.ts --bundle --format=esm --outfile=dist/ui.js",
+    "build": "tsc -p tsconfig.json && npm run build:web && npm run build:ui && cp web/renderer.html dist/renderer.html && cp web/ui.html dist/ui.html",
+    "pipeline": "npm run build && node dist/src/cli.js",
+    "test": "npm run build && node dist/src/tests/runTests.js",
+    "ui": "npm run build && node scripts/serve-ui.js"
+  },
+  "dependencies": {
+    "playwright": "^1.54.2",
+    "polygon-clipping": "^0.15.7",
+    "three": "^0.179.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "esbuild": "^0.25.9",
+    "typescript": "^5.9.2"
+  }
+}
