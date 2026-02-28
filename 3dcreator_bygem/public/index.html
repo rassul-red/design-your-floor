@@ -70,6 +70,15 @@
         <label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold;">System Prompt (Instructions for Gemini):</label>
         <textarea id="geminiSystemPrompt" rows="4" style="width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;" placeholder="e.g. You are an expert interior designer. Transform this blockout into a highly realistic architectural render..."></textarea>
         <p style="font-size: 12px; color: #666; margin-top: 5px;">This prompt sets the overall behavior and style for the enhancement.</p>
+
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ddd;">
+          <label style="display: flex; align-items: center; cursor: pointer; font-size: 14px; font-weight: bold; margin-bottom: 5px;">
+            <input type="checkbox" id="furniturePromptCheck" style="width: auto; margin-right: 8px;">
+            Include Furniture Prompt
+          </label>
+          <textarea id="furniturePrompt" rows="3" style="width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; opacity: 0.5;" disabled placeholder="e.g. Add modern minimalist furniture appropriate for this room type..."></textarea>
+          <p style="font-size: 12px; color: #666; margin-top: 5px;">Optional prompt to guide furniture placement and style.</p>
+        </div>
       </div>
 
       <div class="action-row">

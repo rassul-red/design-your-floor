@@ -142,43 +142,13 @@ function init() {
 
         // Default System Prompt
         const defaultSystemPrompt = `Transform this simple low-poly 3D scene into a realistic interior render while strictly preserving the exact camera angle, perspective, composition, room geometry, wall positions, openings, and spatial layout from the input image.
-The input image is a layout and viewpoint guide. Do not change the viewpoint. Do not rotate the camera. Do not zoom in or out. Do not redesign the floor plan. Keep all walls, doors, windows, and object placements aligned to the input scene.
-Create it as a realistic {ROOM_TYPE} inside an apartment. The final image should look like a believable real interior photograph with:
 
-realistic materials
-natural lighting
-proper depth and shadows
-clean proportions
-modern, tasteful interior design
-functional apartment-scale furnishing
-Important spatial rules:
+Some additional info:
+- Walls are beige colored
+- Blue half-transparent blocks are windows`;
 
-Brown shapes are doors
-treat all simple geometric masses as layout guides
-preserve the relative size and position of all major forms
-keep walkable space logical and realistic
-keep the room dimensions consistent with the source image
-maintain the same viewing direction and framing
-Style rules:
-
-modern
-elegant but believable
-not overly luxurious unless specified
-realistic textures such as wood, stone, painted walls, metal, glass, fabric, ceramic
-visually coherent color palette
-apartment interior, not a showroom, not a fantasy scene
-Quality target:
-photorealistic interior rendering, realistic global illumination, detailed but natural materials, architecturally believable, high realism.
-Negative instructions:
-
-do not change the angle
-do not invent a different layout
-do not move doors/windows
-do not add impossible architecture
-do not create a wide-angle distortion unless already implied by the input
-do not turn this into a stylized illustration
-do not make it look like a game environment
-do not ignore the block geometry of the source scene`;
+        // Default Furniture Prompt
+        const defaultFurniturePrompt = `Add modern, tasteful furniture appropriate for this room type. Include realistic furnishings with proper scale and placement. Use natural materials like wood, fabric, and metal.`;
 
         // Load saved system prompt or use default
         const savedSysPrompt = localStorage.getItem('geminiSystemPrompt');
@@ -187,6 +157,18 @@ do not ignore the block geometry of the source scene`;
         } else {
             document.getElementById('geminiSystemPrompt').value = defaultSystemPrompt;
         }
+
+        // Load saved furniture prompt or use default
+        const savedFurniturePrompt = localStorage.getItem('geminiFurniturePrompt');
+        document.getElementById('furniturePrompt').value = savedFurniturePrompt || defaultFurniturePrompt;
+
+        // Furniture prompt checkbox toggle
+        const furnitureCheck = document.getElementById('furniturePromptCheck');
+        const furnitureTextarea = document.getElementById('furniturePrompt');
+        furnitureCheck.addEventListener('change', () => {
+            furnitureTextarea.disabled = !furnitureCheck.checked;
+            furnitureTextarea.style.opacity = furnitureCheck.checked ? '1' : '0.5';
+        });
 
         // Reference images state
         let referenceImages = []; // Array of { dataURL, name }
@@ -530,7 +512,7 @@ function build3DModel(data) {
     }
     // 2. Build Doors
     const isSolidDoors = document.getElementById('solidDoorsCheck') ? document.getElementById('solidDoorsCheck').checked : false;
-    const doorHeight = (isSolidDoors ? 2.0 : 0.05) / SCALE;
+    const doorHeight = (isSolidDoors ? 2.5 : 0.05) / SCALE;
     if (data.door) {
         const polys = parsePolygons(data.door);
         polys.forEach(poly => {
