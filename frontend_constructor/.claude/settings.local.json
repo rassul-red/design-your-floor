@@ -19,7 +19,8 @@
       "Bash(kill %1:*)",
       "Bash(npx vite:*)",
       "Bash(curl:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "mcp__plugin_playwright_playwright__browser_snapshot"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import { usePlanStore } from '../store/planStore';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '../canvas/colors';
-import { polygonArea } from '../geometry/polygonOps';
+import { computeNetRoomArea } from '../geometry/wallGenerator';
 import type { RoomCategory } from '../store/types';
 
 const ROOM_CATEGORIES: RoomCategory[] = [
@@ -77,7 +77,10 @@ export function PropertiesPanel() {
 
               <div style={styles.row}>
                 <span style={styles.label}>Area:</span>
-                {(polygonArea(selectedRoom.vertices) / (metadata.pixelsPerMeter * metadata.pixelsPerMeter)).toFixed(2)} m²
+                {(computeNetRoomArea(
+                  selectedRoom.vertices,
+                  metadata.wallDepth,
+                ) / (metadata.pixelsPerMeter * metadata.pixelsPerMeter)).toFixed(2)} m²
               </div>
 
               <div style={styles.row}>

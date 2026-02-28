@@ -36,7 +36,13 @@
       <button id="updateCamBtn">Set Camera View</button>
       <button id="resetCamBtn">Reset Orbit</button>
       <hr>
-      <button id="exportBtn" style="background: #4CAF50; color: white; border: none; font-weight: bold;">Export Rendered Image</button>
+      <p style="font-size: 12px; color: #555;"><strong>Fly Mode:</strong> Right-Click + Drag to Look around. Use W, A, S, D to move. Q/E for up/down.</p>
+      <label style="display: flex; align-items: center; font-size: 14px; margin-bottom: 10px;">
+        Speed: 
+        <input type="range" id="flySpeedSlider" min="0.05" max="1.5" step="0.05" value="0.3" style="margin-left: 8px; flex-grow: 1;">
+      </label>
+      <button id="exportViewBtn" style="background: #2196F3; color: white; border: none; font-weight: bold; margin-bottom: 10px;">Screenshot Current View</button>
+      <button id="exportBtn" style="background: #4CAF50; color: white; border: none; font-weight: bold;">Export Standard Render</button>
     </div>
   </div>
   <div id="canvas-container"></div>

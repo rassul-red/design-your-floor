@@ -95,10 +95,10 @@ export function exportPlanJSON(
 
   // Generate walls and inner
   if (rooms.length > 0) {
-    const { walls, inner } = generateWalls(rooms, metadata.wallDepth);
+    const { wallStrips, inner } = generateWalls(rooms, metadata.wallDepth, elements);
 
-    if (walls.length > 0) {
-      result.wall = { type: 'MultiPolygon', coordinates: walls };
+    if (wallStrips.length > 0) {
+      result.wall = { type: 'MultiPolygon', coordinates: wallStrips };
     } else {
       result.wall = null;
     }

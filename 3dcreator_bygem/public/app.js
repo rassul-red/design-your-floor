@@ -1,6 +1,6 @@
 // 3D Floor Plan Viewer Logic
 
-let scene, camera, renderer, controls;
+let scene, camera, renderer;
 let floorPlanGroup = new THREE.Group();
 let currentData = null;
 const SCALE = 0.05; // 1 pixel = 0.05 meters
@@ -15,6 +15,17 @@ const ROOM_COLORS = {
     "balcony": 0xb3b3b3
 };
 
+const keys = {
+    w: false, a: false, s: false, d: false, q: false, e: false
+};
+let flySpeed = 0.3;
+
+// Mouse Look state
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+let cameraYaw = 0; // Horizontal rotation
+let cameraPitch = -Math.PI / 4; // Vertical rotation (looking down initially)
+
 init();
 animate();
 
@@ -25,30 +36,44 @@ function init() {
     scene.background = new THREE.Color(0xf0f0f0);
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.rotation.order = 'YXZ'; // Important for FPS camera
+    updateCameraRotation();
     camera.position.set(0, 20, 20);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, 0);
+    // 3-Point Lighting & Hemisphere Setup for better depth perception
+    // 1. Hemisphere Light adds a gradient (sky to ground) instead of flat ambient light
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    hemiLight.position.set(0, 200, 0);
+    scene.add(hemiLight);
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    dirLight.position.set(100, 200, 100);
+    // 2. Main Sun Light (Casts shadows)
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    dirLight.position.set(100, 200, 50);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.left = -20;
-    dirLight.shadow.camera.right = 20;
-    dirLight.shadow.camera.top = 20;
-    dirLight.shadow.camera.bottom = -20;
+    dirLight.shadow.camera.left = -30;
+    dirLight.shadow.camera.right = 30;
+    dirLight.shadow.camera.top = 30;
+    dirLight.shadow.camera.bottom = -30;
+    dirLight.shadow.bias = -0.0005;
     scene.add(dirLight);
+
+    // 3. Fill Light (Cool tone, lights up shadowed areas from opposite angle)
+    const fillLight1 = new THREE.DirectionalLight(0x90b0d0, 0.3);
+    fillLight1.position.set(-100, 100, -50);
+    scene.add(fillLight1);
+
+    // 4. Back Light (Warm tone, defines edges opposite to the fill)
+    const fillLight2 = new THREE.DirectionalLight(0xd0b090, 0.2);
+    fillLight2.position.set(50, 50, -100);
+    scene.add(fillLight2);
 
     // Group for the floor plan
     floorPlanGroup.rotation.x = -Math.PI / 2; // Make Z axis point up
@@ -62,16 +87,75 @@ function init() {
     document.getElementById('updateCamBtn').addEventListener('click', updateCameraFromUI);
     document.getElementById('resetCamBtn').addEventListener('click', () => {
         camera.position.set(0, 20, 20);
-        controls.target.set(0, 0, 0);
-        controls.update();
+        cameraYaw = 0;
+        cameraPitch = -Math.PI / 4;
+        updateCameraRotation();
     });
     document.getElementById('exportBtn').addEventListener('click', exportImage);
+    const exportViewBtn = document.getElementById('exportViewBtn');
+    if (exportViewBtn) {
+        exportViewBtn.addEventListener('click', exportScreenshot);
+    }
     const solidDoorsCheck = document.getElementById('solidDoorsCheck');
     if (solidDoorsCheck) {
         solidDoorsCheck.addEventListener('change', () => {
             if (currentData) build3DModel(currentData);
         });
     }
+
+    const flySpeedSlider = document.getElementById('flySpeedSlider');
+    if (flySpeedSlider) {
+        flySpeedSlider.addEventListener('input', (e) => {
+            flySpeed = parseFloat(e.target.value);
+        });
+    }
+
+    // Keyboard Listeners
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        if (keys.hasOwnProperty(key)) keys[key] = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        const key = e.key.toLowerCase();
+        if (keys.hasOwnProperty(key)) keys[key] = false;
+    });
+
+    // Mouse Listeners for Looking Around (Right-Click Drag)
+    renderer.domElement.addEventListener('mousedown', (e) => {
+        if (e.button === 2 || e.button === 0) { // Right click (2) or Left click (0) to look
+            isDragging = true;
+            previousMousePosition = { x: e.offsetX, y: e.offsetY };
+        }
+    });
+
+    renderer.domElement.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const deltaX = e.offsetX - previousMousePosition.x;
+            const deltaY = e.offsetY - previousMousePosition.y;
+
+            const lookSpeed = 0.005;
+            cameraYaw -= deltaX * lookSpeed;
+            cameraPitch -= deltaY * lookSpeed;
+
+            // Clamp pitch to avoid flipping over
+            cameraPitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, cameraPitch));
+
+            updateCameraRotation();
+
+            previousMousePosition = { x: e.offsetX, y: e.offsetY };
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+    
+    // Prevent context menu on right click so we can use it to drag
+    renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+function updateCameraRotation() {
+    camera.rotation.set(cameraPitch, cameraYaw, 0);
 }
 
 function onWindowResize() {
@@ -82,8 +166,46 @@ function onWindowResize() {
 
 function animate() {
     requestAnimationFrame(animate);
-    controls.update();
+    
+    // Fly Controls Logic (WASD relative to camera looking direction)
+    if (keys.w || keys.a || keys.s || keys.d || keys.q || keys.e) {
+        const dir = new THREE.Vector3(0, 0, -1);
+        dir.applyQuaternion(camera.quaternion);
+        
+        // Flatten the forward vector for pure WASD walking (optional, but typical for FPS)
+        // dir.y = 0; 
+        // dir.normalize();
+
+        const right = new THREE.Vector3(1, 0, 0);
+        right.applyQuaternion(camera.quaternion);
+        
+        // right.y = 0;
+        // right.normalize();
+
+        const move = new THREE.Vector3();
+        if (keys.w) move.addScaledVector(dir, flySpeed);
+        if (keys.s) move.addScaledVector(dir, -flySpeed);
+        if (keys.a) move.addScaledVector(right, -flySpeed); // A is left, right vector is positive X
+        if (keys.d) move.addScaledVector(right, flySpeed);
+        
+        // Q/E move strictly on world Y axis
+        if (keys.q) move.y += flySpeed;
+        if (keys.e) move.y -= flySpeed;
+        
+        camera.position.add(move);
+    }
+    
     renderer.render(scene, camera);
+}
+
+function exportScreenshot() {
+    renderer.render(scene, camera);
+    const dataURL = renderer.domElement.toDataURL('image/png');
+    
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = 'floor_plan_screenshot.png';
+    link.click();
 }
 
 function parsePolygons(data) {
@@ -119,6 +241,27 @@ function createShape(polygon) {
     return shape;
 }
 
+function createPolygonOutline(polygon, depth, zOffset = 0) {
+    const points = [];
+    polygon.forEach(ring => {
+        // Assume ring first and last points are the same, iterate to length - 1
+        for (let i = 0; i < ring.length - 1; i++) {
+            const p1 = ring[i];
+            const p2 = ring[i + 1];
+            // Bottom edge
+            points.push(new THREE.Vector3(p1[0], p1[1], zOffset));
+            points.push(new THREE.Vector3(p2[0], p2[1], zOffset));
+            // Top edge
+            points.push(new THREE.Vector3(p1[0], p1[1], zOffset + depth));
+            points.push(new THREE.Vector3(p2[0], p2[1], zOffset + depth));
+            // Vertical edge at p1
+            points.push(new THREE.Vector3(p1[0], p1[1], zOffset));
+            points.push(new THREE.Vector3(p1[0], p1[1], zOffset + depth));
+        }
+    });
+    return new THREE.BufferGeometry().setFromPoints(points);
+}
+
 function computeCentroid(extRing) {
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     extRing.forEach(pt => {
@@ -148,8 +291,8 @@ function handleJSONUpload(e) {
                     const c = computeCentroid(polys[0][0]);
                     document.getElementById('camX').value = Math.round(c.x);
                     document.getElementById('camY').value = Math.round(c.y);
-                    controls.target.set(c.x * SCALE, 0, c.y * SCALE);
-                    controls.update();
+                    
+                    // Set initial look target if needed, but we use rotation now
                 }
             }
             
@@ -189,26 +332,43 @@ function build3DModel(data) {
     const doorHeight = (isSolidDoors ? 2.0 : 0.05) / SCALE;
     if (data.door) {
         const polys = parsePolygons(data.door);
-    polys.forEach(poly => {
-        const shape = createShape(poly);
-        if (shape) {
-            const extrudeSettings = { depth: doorHeight, bevelEnabled: false };
-            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-            const mesh = new THREE.Mesh(geometry, doorMat);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            floorPlanGroup.add(mesh);
-        }
-    });
-}
-
-    const windowBase = 1.0 / SCALE;
-    const windowDepth = 1.5 / SCALE;
-    if (data.window) {
-        const polys = parsePolygons(data.window);
         polys.forEach(poly => {
             const shape = createShape(poly);
             if (shape) {
+                const extrudeSettings = { depth: doorHeight, bevelEnabled: false };
+                const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                const mesh = new THREE.Mesh(geometry, doorMat);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                floorPlanGroup.add(mesh);
+            }
+        });
+    }
+
+    // 2.5 Build Front Door (distinct from other doors)
+    const frontDoorMat = new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.7 }); // Reddish, distinct color
+    if (data.front_door) {
+        const polys = parsePolygons(data.front_door);
+        polys.forEach(poly => {
+            const shape = createShape(poly);
+            if (shape) {
+                const extrudeSettings = { depth: doorHeight, bevelEnabled: false };
+                const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                const mesh = new THREE.Mesh(geometry, frontDoorMat);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                floorPlanGroup.add(mesh);
+            }
+        });
+    }
+                // 3. Build Windows (from bottom to top)
+                const windowBase = 0; // Start exactly at the floor
+                const windowDepth = WALL_HEIGHT_M / SCALE; // Full height from floor to ceiling
+                if (data.window) {
+                const polys = parsePolygons(data.window);
+                polys.forEach(poly => {
+                const shape = createShape(poly);
+                if (shape) {
                 const extrudeSettings = { depth: windowDepth, bevelEnabled: false };
                 const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                 const mesh = new THREE.Mesh(geometry, windowMat);
@@ -217,15 +377,14 @@ function build3DModel(data) {
             }
         });
     }
+                const rooms = ["living", "bedroom", "bathroom", "kitchen", "balcony"];
+                rooms.forEach(roomType => {
+                if (data[roomType]) {
+                const color = ROOM_COLORS[roomType] || 0xdddddd;
+                const floorMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.9 });
+                const polys = parsePolygons(data[roomType]);
 
-    const rooms = ["living", "bedroom", "bathroom", "kitchen", "balcony"];
-    rooms.forEach(roomType => {
-        if (data[roomType]) {
-            const color = ROOM_COLORS[roomType] || 0xdddddd;
-            const floorMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.9 });
-            const polys = parsePolygons(data[roomType]);
-            
-            polys.forEach(poly => {
+                polys.forEach(poly => {
                 const shape = createShape(poly);
                 if (shape) {
                     const extrudeSettings = { depth: 1, bevelEnabled: false };
@@ -234,21 +393,19 @@ function build3DModel(data) {
                     mesh.position.z = -1; 
                     mesh.receiveShadow = true;
                     floorPlanGroup.add(mesh);
-                    // Furniture placement removed until explicit data is provided
                 }
             });
         }
-    });
-
-    const box = new THREE.Box3().setFromObject(floorPlanGroup);
+    });    const box = new THREE.Box3().setFromObject(floorPlanGroup);
     const center = box.getCenter(new THREE.Vector3());
     
     floorPlanGroup.position.x = -center.x;
     floorPlanGroup.position.z = -center.z; 
 
-    controls.target.set(0, 0, 0);
     camera.position.set(0, 15, 15);
-    controls.update();
+    cameraYaw = 0;
+    cameraPitch = -Math.PI / 4;
+    updateCameraRotation();
 }
 
 function placeFurniture(roomType, extRing) {
@@ -298,13 +455,11 @@ function updateCameraFromUI() {
 
     camera.position.set(camWorldX, camWorldY, camWorldZ);
     
-    const rad = angleDeg * Math.PI / 180;
-    const lookDist = 5; 
-    const lookX = camWorldX + Math.sin(rad) * lookDist;
-    const lookZ = camWorldZ - Math.cos(rad) * lookDist; 
-    
-    controls.target.set(lookX, camWorldY, lookZ);
-    controls.update();
+    // UI angle typically assumes 0 is "up" on the 2D map. 
+    // In our 3D space, mapping that to yaw:
+    cameraYaw = angleDeg * Math.PI / 180;
+    cameraPitch = 0; // Look straight ahead when using UI
+    updateCameraRotation();
 }
 
 function exportImage() {

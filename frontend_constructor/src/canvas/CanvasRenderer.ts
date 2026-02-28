@@ -1,11 +1,14 @@
 import { ViewportTransform } from './ViewportTransform';
 import { GridRenderer } from './GridRenderer';
-import { CATEGORY_COLORS } from './colors';
-import { generateWalls, multiPolygonToPoints } from '../geometry/wallGenerator';
+import { RulerRenderer } from './RulerRenderer';
+import { CATEGORY_COLORS, CATEGORY_LABELS } from './colors';
+import { generateWalls, multiPolygonToPoints, computeNetRoomArea } from '../geometry/wallGenerator';
+import { polygonCentroid } from '../geometry/polygonOps';
 import type { Room, PlacedElement, Point, PlanMetadata } from '../store/types';
 
 export class CanvasRenderer {
   private gridRenderer = new GridRenderer();
+  private rulerRenderer = new RulerRenderer();
   vt = new ViewportTransform();
 
   // Wall cache
@@ -50,6 +53,7 @@ export class CanvasRenderer {
     showGrid = true,
     previewRect: Point[] | null = null,
     previewColor: string | null = null,
+    showRoomLabels = true,
   ) {
     ctx.clearRect(0, 0, width, height);
 
@@ -85,6 +89,13 @@ export class CanvasRenderer {
       this.drawRoom(ctx, room, isSelected);
     }
 
+    // 5b. Room area labels (skip in export mode)
+    if (showRoomLabels) {
+      for (const room of rooms) {
+        this.drawRoomLabel(ctx, room, metadata.pixelsPerMeter, metadata.wallDepth);
+      }
+    }
+
     // 6. Doors/windows/front_door
     for (const element of elements) {
       const isSelected = element.id === selectedId;
@@ -99,6 +110,11 @@ export class CanvasRenderer {
     // 10. Element placement preview (door/window drag)
     if (previewRect && previewRect.length >= 3) {
       this.drawElementPreview(ctx, previewRect, previewColor);
+    }
+
+    // 11. Rulers (canvas-only, not in export)
+    if (showGrid) {
+      this.rulerRenderer.render(ctx, this.vt, width, height, metadata.pixelsPerMeter);
     }
   }
 
@@ -160,6 +176,39 @@ export class CanvasRenderer {
         ctx.fillRect(sp.x - 3, sp.y - 3, 6, 6);
       }
     }
+
+    ctx.restore();
+  }
+
+  private drawRoomLabel(ctx: CanvasRenderingContext2D, room: Room, pixelsPerMeter: number, wallDepth: number = 0) {
+    if (room.vertices.length < 3) return;
+
+    const centroid = polygonCentroid(room.vertices);
+    const screenPos = this.vt.worldToScreen(centroid);
+
+    const areaPixels = computeNetRoomArea(room.vertices, wallDepth);
+    const areaSqM = areaPixels / (pixelsPerMeter * pixelsPerMeter);
+    const label = CATEGORY_LABELS[room.category] || room.category;
+    const areaText = `${Math.round(areaSqM)} m²`;
+
+    ctx.save();
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const labelWidth = Math.max(ctx.measureText(label).width, ctx.measureText(areaText).width) + 8;
+    const labelHeight = 28;
+
+    // White background for readability
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillRect(screenPos.x - labelWidth / 2, screenPos.y - labelHeight / 2, labelWidth, labelHeight);
+
+    // Category name
+    ctx.fillStyle = '#333333';
+    ctx.fillText(label, screenPos.x, screenPos.y - 7);
+    // Area
+    ctx.font = '10px sans-serif';
+    ctx.fillText(areaText, screenPos.x, screenPos.y + 7);
 
     ctx.restore();
   }

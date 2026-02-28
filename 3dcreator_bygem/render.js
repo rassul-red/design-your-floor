@@ -36,7 +36,29 @@ const server = app.listen(PORT, async () => {
 
         // Call the headless function
         const dataUrl = await page.evaluate((data, config) => {
-            return window.renderHeadless(data, config);
+            // Need to mock window.renderHeadless to use rotation instead of orbit
+            build3DModel(data);
+            
+            const h = config.height || 1.8;
+            const x = config.x || 128;
+            const y = config.y || 128;
+            const angleDeg = config.angle || 0;
+            
+            const offsetX = floorPlanGroup.position.x;
+            const offsetZ = floorPlanGroup.position.z;
+
+            const camWorldX = x * SCALE + offsetX;
+            const camWorldZ = y * SCALE + offsetZ;
+            const camWorldY = h;
+
+            camera.position.set(camWorldX, camWorldY, camWorldZ);
+            
+            cameraYaw = angleDeg * Math.PI / 180;
+            cameraPitch = 0;
+            updateCameraRotation();
+            
+            renderer.render(scene, camera);
+            return renderer.domElement.toDataURL('image/png');
         }, jsonData, { height: camHeight, x: camX, y: camY, angle: camAngle });
 
         // Save image
