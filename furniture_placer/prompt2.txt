@@ -1,7 +1,0 @@
-You have two images.
-
-IMAGE 1: the original floor plan. This is the base. Do not change anything in it — walls, rooms, doors, windows stay exactly as they are.
-
-IMAGE 2: a furnished version that may have distorted walls or wrong room shapes.
-
-Task: copy only the colored furniture rectangles from IMAGE 2 and place them onto IMAGE 1. Do not copy any structural changes from IMAGE 2. The output must look like IMAGE 1 with furniture rectangles added inside the rooms. Nothing else changes.

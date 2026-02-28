@@ -7,6 +7,26 @@ const SCALE = 0.05; // 1 pixel = 0.05 meters
 const WALL_HEIGHT_M = 3.0;
 const WALL_DEPTH = WALL_HEIGHT_M / SCALE;
 
+const FURNITURE_CONFIG = {
+    "bed":            { color: 0xffaaaa, height: 0.5 },
+    "sofa":           { color: 0x555555, height: 0.6 },
+    "dining table":   { color: 0x8b6914, height: 0.75 },
+    "dining chair":   { color: 0xd2b48c, height: 0.45 },
+    "coffee table":   { color: 0x8b6914, height: 0.4 },
+    "tv unit":        { color: 0x444444, height: 0.5 },
+    "wardrobe":       { color: 0x9b7653, height: 2.0 },
+    "bedside table":  { color: 0xc4a882, height: 0.5 },
+    "console":        { color: 0x888888, height: 0.8 },
+    "counter":        { color: 0xeeeeee, height: 0.9 },
+    "toilet":         { color: 0xffffff, height: 0.4 },
+    "bathroom sink":  { color: 0xfafafa, height: 0.8 },
+    "shower":         { color: 0xadd8e6, height: 0.1 },
+    "kitchen sink":   { color: 0xc0c0c0, height: 0.9 },
+    "stove":          { color: 0x333333, height: 0.9 },
+    "fridge":         { color: 0xdddddd, height: 1.8 },
+    "_default":       { color: 0xaaaaaa, height: 0.5 }
+};
+
 const ROOM_COLORS = {
     "living": 0xd9d9d9,
     "bedroom": 0x66c2a5,
@@ -475,6 +495,18 @@ function handleJSONUpload(e) {
             build3DModel(data);
             document.getElementById('controls').classList.remove('hidden');
             
+            // Auto-populate furniture prompt if JSON has furniture data
+            if (data.furniture) {
+                const furnitureCheck = document.getElementById('furniturePromptCheck');
+                const furnitureTextarea = document.getElementById('furniturePrompt');
+                if (furnitureCheck && furnitureTextarea) {
+                    furnitureCheck.checked = true;
+                    furnitureTextarea.disabled = false;
+                    furnitureTextarea.style.opacity = '1';
+                    furnitureTextarea.value = 'Each object of image is furniture (besides walls, windows)\n' + JSON.stringify(data.furniture, null, 2);
+                }
+            }
+
             if (data.inner) {
                 const polys = parsePolygons(data.inner);
                 if (polys.length > 0) {
@@ -586,7 +618,31 @@ function build3DModel(data) {
                 }
             });
         }
-    });    const box = new THREE.Box3().setFromObject(floorPlanGroup);
+    });
+
+    // Build furniture from furnished JSON
+    if (data.furniture) {
+        Object.keys(data.furniture).forEach(roomKey => {
+            const items = data.furniture[roomKey];
+            items.forEach(item => {
+                const config = FURNITURE_CONFIG[item.type] || FURNITURE_CONFIG["_default"];
+                const heightPx = config.height / SCALE;
+                const geo = new THREE.BoxGeometry(item.width_coord, item.height_coord, heightPx);
+                const mat = new THREE.MeshStandardMaterial({ color: config.color, roughness: 0.7 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(
+                    item.x_coord,
+                    item.y_coord,
+                    heightPx / 2
+                );
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                floorPlanGroup.add(mesh);
+            });
+        });
+    }
+
+    const box = new THREE.Box3().setFromObject(floorPlanGroup);
     const center = box.getCenter(new THREE.Vector3());
     
     floorPlanGroup.position.x = -center.x;

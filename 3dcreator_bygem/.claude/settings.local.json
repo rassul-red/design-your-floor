@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(node:*)",
+      "Bash(python3:*)"
     ]
   }
 }

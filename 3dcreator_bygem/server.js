@@ -117,7 +117,7 @@ app.post('/api/enhance', async (req, res) => {
     }
 });
 
-const PORT = 8000;
+const PORT = 8005;
 app.listen(PORT, () => {
     console.log(`Interactive viewer running at http://localhost:${PORT}`);
     console.log(`API endpoints active.`);
