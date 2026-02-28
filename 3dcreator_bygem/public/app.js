@@ -188,6 +188,83 @@ do not ignore the block geometry of the source scene`;
             document.getElementById('geminiSystemPrompt').value = defaultSystemPrompt;
         }
 
+        // Reference images state
+        let referenceImages = []; // Array of { dataURL, name }
+        const refContainer = document.getElementById('referenceImagesContainer');
+        const refThumbnails = document.getElementById('referenceImageThumbnails');
+        const refInput = document.getElementById('referenceImageInput');
+        const clearRefBtn = document.getElementById('clearReferenceImages');
+        const downloadBtn = document.getElementById('downloadResponseBtn');
+        const iterateBtn = document.getElementById('iterateBtn');
+
+        function renderRefThumbnails() {
+            refThumbnails.innerHTML = '';
+            referenceImages.forEach((img, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position: relative; width: 80px; height: 80px;';
+                const thumb = document.createElement('img');
+                thumb.src = img.dataURL;
+                thumb.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc;';
+                thumb.title = img.name;
+                const removeBtn = document.createElement('button');
+                removeBtn.innerText = '×';
+                removeBtn.style.cssText = 'position: absolute; top: -6px; right: -6px; background: #f44336; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 14px; cursor: pointer; line-height: 18px; padding: 0;';
+                removeBtn.addEventListener('click', () => {
+                    referenceImages.splice(idx, 1);
+                    renderRefThumbnails();
+                    if (referenceImages.length === 0) refContainer.classList.add('hidden');
+                });
+                wrapper.appendChild(thumb);
+                wrapper.appendChild(removeBtn);
+                refThumbnails.appendChild(wrapper);
+            });
+        }
+
+        refInput.addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    referenceImages.push({ dataURL: ev.target.result, name: file.name });
+                    renderRefThumbnails();
+                    refContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            });
+            refInput.value = '';
+        });
+
+        clearRefBtn.addEventListener('click', () => {
+            referenceImages = [];
+            renderRefThumbnails();
+            refContainer.classList.add('hidden');
+        });
+
+        // Download the generated image
+        downloadBtn.addEventListener('click', () => {
+            const imgSrc = document.getElementById('geminiResponseImage').src;
+            if (!imgSrc) return;
+            const link = document.createElement('a');
+            link.href = imgSrc;
+            link.download = 'gemini_enhanced_' + Date.now() + '.png';
+            link.click();
+        });
+
+        // Iterate: use the generated image as the new context image
+        iterateBtn.addEventListener('click', () => {
+            const generatedImg = document.getElementById('geminiResponseImage').src;
+            if (!generatedImg) return;
+            // Replace the screenshot preview with the generated image
+            document.getElementById('screenshotPreview').src = generatedImg;
+            // Show reference image upload area
+            refContainer.classList.remove('hidden');
+            // Clear the user prompt for new instructions
+            document.getElementById('geminiUserPrompt').value = '';
+            // Hide the response container
+            document.getElementById('geminiResponseContainer').classList.add('hidden');
+            // Scroll to top of modal
+            document.getElementById('modal-content').scrollTop = 0;
+        });
+
         document.getElementById('geminiEnhanceBtn').addEventListener('click', async () => {
             const sysPrompt = document.getElementById('geminiSystemPrompt').value;
             const userPrompt = document.getElementById('geminiUserPrompt').value;
@@ -196,7 +273,7 @@ do not ignore the block geometry of the source scene`;
             const responseContainer = document.getElementById('geminiResponseContainer');
             const responseText = document.getElementById('geminiResponseText');
             const responseImage = document.getElementById('geminiResponseImage');
-            
+
             // Save system prompt
             localStorage.setItem('geminiSystemPrompt', sysPrompt);
 
@@ -205,6 +282,8 @@ do not ignore the block geometry of the source scene`;
             responseContainer.classList.add('hidden');
             responseText.classList.add('hidden');
             responseImage.classList.add('hidden');
+            downloadBtn.classList.add('hidden');
+            iterateBtn.classList.add('hidden');
             responseText.innerText = '';
             responseImage.src = '';
 
@@ -215,7 +294,8 @@ do not ignore the block geometry of the source scene`;
                     body: JSON.stringify({
                         systemPrompt: sysPrompt,
                         userPrompt: userPrompt,
-                        image: imageSrc
+                        image: imageSrc,
+                        referenceImages: referenceImages.map(r => r.dataURL)
                     })
                 });
 
@@ -228,6 +308,8 @@ do not ignore the block geometry of the source scene`;
                 if (data.isImage) {
                     responseImage.src = data.result;
                     responseImage.classList.remove('hidden');
+                    downloadBtn.classList.remove('hidden');
+                    iterateBtn.classList.remove('hidden');
                 } else {
                     responseText.innerText = data.result;
                     responseText.classList.remove('hidden');

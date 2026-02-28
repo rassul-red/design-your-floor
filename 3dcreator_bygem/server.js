@@ -4,7 +4,7 @@ const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
 app.use(express.static('public'));
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '100mb' }));
 
 app.post('/api/enhance', async (req, res) => {
     try {
@@ -13,8 +13,8 @@ app.post('/api/enhance', async (req, res) => {
             return res.status(401).json({ error: "Gemini API key is not configured in .env file." });
         }
 
-        const { systemPrompt, userPrompt, image } = req.body;
-        
+        const { systemPrompt, userPrompt, image, referenceImages } = req.body;
+
         if (!image || !image.startsWith('data:image/')) {
             return res.status(400).json({ error: "Invalid image data provided." });
         }
@@ -23,16 +23,39 @@ app.post('/api/enhance', async (req, res) => {
         const ai = new GoogleGenAI({ apiKey: apiKey });
 
         const base64Data = image.split(',')[1];
-        
+        const mainMimeType = image.match(/^data:(image\/\w+);/)?.[1] || 'image/png';
+
         const parts = [
             {
                 inlineData: {
                     data: base64Data,
-                    mimeType: "image/png"
+                    mimeType: mainMimeType
                 }
-            },
-            { text: `System Instruction: ${systemPrompt}\n\nUser Request: ${userPrompt || 'Render this scene realistically.'}` }
+            }
         ];
+
+        // Add reference images if provided
+        if (referenceImages && Array.isArray(referenceImages)) {
+            referenceImages.forEach((refImg, idx) => {
+                if (refImg && refImg.startsWith('data:image/')) {
+                    const refBase64 = refImg.split(',')[1];
+                    const refMimeType = refImg.match(/^data:(image\/\w+);/)?.[1] || 'image/png';
+                    parts.push({
+                        inlineData: {
+                            data: refBase64,
+                            mimeType: refMimeType
+                        }
+                    });
+                }
+            });
+        }
+
+        let promptText = `System Instruction: ${systemPrompt}\n\nUser Request: ${userPrompt || 'Render this scene realistically.'}`;
+        if (referenceImages && referenceImages.length > 0) {
+            promptText += `\n\nNote: The first image is the main scene to work with. The additional ${referenceImages.length} image(s) are reference images provided by the user — use them as visual references for the modifications requested above.`;
+        }
+
+        parts.push({ text: promptText });
 
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-image-preview',
