@@ -15,6 +15,16 @@ app.post('/api/enhance', async (req, res) => {
 
         const { systemPrompt, userPrompt, image, referenceImages } = req.body;
 
+        console.log('--- /api/enhance request ---');
+        console.log('Has main image:', !!image);
+        console.log('User prompt:', userPrompt);
+        console.log('Reference images received:', referenceImages ? referenceImages.length : 0);
+        if (referenceImages && referenceImages.length > 0) {
+            referenceImages.forEach((r, i) => {
+                console.log(`  ref[${i}]: starts with "${r?.substring(0, 30)}...", length: ${r?.length}`);
+            });
+        }
+
         if (!image || !image.startsWith('data:image/')) {
             return res.status(400).json({ error: "Invalid image data provided." });
         }
@@ -25,21 +35,29 @@ app.post('/api/enhance', async (req, res) => {
         const base64Data = image.split(',')[1];
         const mainMimeType = image.match(/^data:(image\/\w+);/)?.[1] || 'image/png';
 
-        const parts = [
-            {
-                inlineData: {
-                    data: base64Data,
-                    mimeType: mainMimeType
-                }
-            }
-        ];
+        const hasReferenceImages = referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0;
 
-        // Add reference images if provided
-        if (referenceImages && Array.isArray(referenceImages)) {
+        const parts = [];
+
+        // Start with system instruction
+        parts.push({ text: `System Instruction: ${systemPrompt}` });
+
+        // Main scene image with label
+        parts.push({ text: hasReferenceImages ? 'This is the MAIN SCENE image to edit:' : '' });
+        parts.push({
+            inlineData: {
+                data: base64Data,
+                mimeType: mainMimeType
+            }
+        });
+
+        // Add each reference image with an explicit label
+        if (hasReferenceImages) {
             referenceImages.forEach((refImg, idx) => {
                 if (refImg && refImg.startsWith('data:image/')) {
                     const refBase64 = refImg.split(',')[1];
                     const refMimeType = refImg.match(/^data:(image\/\w+);/)?.[1] || 'image/png';
+                    parts.push({ text: `Reference image ${idx + 1} — use this as a visual reference for the user's request below:` });
                     parts.push({
                         inlineData: {
                             data: refBase64,
@@ -50,12 +68,18 @@ app.post('/api/enhance', async (req, res) => {
             });
         }
 
-        let promptText = `System Instruction: ${systemPrompt}\n\nUser Request: ${userPrompt || 'Render this scene realistically.'}`;
-        if (referenceImages && referenceImages.length > 0) {
-            promptText += `\n\nNote: The first image is the main scene to work with. The additional ${referenceImages.length} image(s) are reference images provided by the user — use them as visual references for the modifications requested above.`;
+        // User request last so it's closest to where Gemini generates output
+        let userRequestText = `\n\nUser Request: ${userPrompt || 'Render this scene realistically.'}`;
+        if (hasReferenceImages) {
+            userRequestText += `\n\nIMPORTANT: The user has provided ${referenceImages.length} reference image(s) above. You MUST incorporate the items/elements shown in the reference image(s) into the main scene according to the user's request. The reference images show exactly what the user wants added or changed in the main scene.`;
         }
+        parts.push({ text: userRequestText });
 
-        parts.push({ text: promptText });
+        console.log('Parts being sent to Gemini:');
+        parts.forEach((p, i) => {
+            if (p.text) console.log(`  part[${i}]: TEXT = "${p.text.substring(0, 80)}..."`);
+            if (p.inlineData) console.log(`  part[${i}]: IMAGE (${p.inlineData.mimeType}, ${p.inlineData.data.length} chars base64)`);
+        });
 
         const response = await ai.models.generateContent({
             model: 'gemini-3-pro-image-preview',
