@@ -1,0 +1,144 @@
+Use the provided apartment layout image as a strict base plan.
+Your task is to create a clean professional 2D furnished floor plan, while preserving the original layout exactly.
+Rules
+
+Do not change the walls, room boundaries, openings, doors, windows, plumbing zones, or overall geometry.
+Do not redesign the apartment.
+Do not generate a new floor plan from scratch.
+Do not make it a 3D render, perspective view, sketch, or photorealistic interior.
+Keep the output in the same top-down 2D architectural layout style as the source image.
+Maintain the same proportions, room shapes, orientation, and footprint.
+Only add well-scaled furniture and interior placement inside the existing layout.
+
+CRITICAL — Furniture rendering style
+
+Every single piece of furniture must be represented as a plain, simple rectangle. No exceptions.
+Do not draw any internal detail, texture, pattern, cushion lines, pillow shapes, burner circles, faucet shapes, or any illustrative/iconic furniture symbol inside the rectangles.
+A bed is a rectangle. A sofa is a rectangle. A toilet is a rectangle. A sink is a rectangle. A shower is a rectangle. A table is a rectangle. Everything is a rectangle.
+The only thing that should appear on each furniture rectangle is its numeric ID label — nothing else.
+Do not attempt to make furniture "look like" what it is. The legend/key handles identification. The rectangle is only a placeholder shape.
+Rectangles should be filled with a single flat color or light fill to distinguish them from walls, with no gradients, no hatching, no line detail inside.
+The rectangles must be properly scaled to the real-world dimensions of the furniture they represent.
+
+Furniture labeling
+
+Each furniture rectangle must have a visible numeric ID label placed centered on top of it.
+Number items sequentially (1, 2, 3, …) and group by type so that items of the same category share a clear numbering range.
+Include a legend/key on the side or bottom of the plan listing every ID number with its furniture name — for example:
+
+1 — Queen Bed
+2 — Bedside Table
+3 — Bedside Table
+4 — Wardrobe
+5 — Sofa
+6 — Coffee Table
+7 — TV Unit
+…and so on
+
+
+The ID numbers must be legible, consistently sized, and not overlap with walls or other labels.
+Use a contrasting color or bold text for the numbers so they are clearly readable against the rectangle fill.
+
+Goal
+Place furniture according to modern apartment living standards, with emphasis on:
+
+comfort
+practicality
+clean circulation paths
+realistic spacing
+contemporary furniture placement
+efficient use of space
+visually balanced composition
+
+Furniture placement requirements
+Add furniture only where it makes sense functionally, such as:
+
+bed and bedside tables in bedroom areas
+sofa, coffee table, TV/storage in living area
+dining table where appropriate
+kitchen furniture/appliances aligned with kitchen zone
+wardrobe/storage where practical
+desk/work area if space allows
+bathroom fixtures only in bathroom zones
+
+Per-room maximum item limits
+Strictly respect the following maximum quantities per individual room. Do not exceed these limits under any circumstance, even if the room appears large enough.
+Bathroom / WC:
+
+Max 1 toilet
+Max 1 sink / vanity
+Max 1 shower
+Max 1 bathtub
+Max 1 towel rack / storage unit
+A bathroom does not need all of the above — only include what fits comfortably and is appropriate for the room size. A small WC may only need a toilet and a sink.
+
+Bedroom:
+
+Max 1 bed (single or double depending on room size)
+Max 2 bedside tables (one per side of bed)
+Max 1 wardrobe / closet
+Max 1 desk
+Max 1 desk chair
+Max 1 dresser / chest of drawers
+
+Living room:
+
+Max 1 sofa (or 1 sofa + 1 armchair if space allows)
+Max 1 coffee table
+Max 1 TV unit / media console
+Max 1 bookshelf or display unit
+Max 1 side table
+
+Dining area:
+
+Max 1 dining table
+Max number of dining chairs should match the table size realistically (e.g., 4 chairs for a 4-person table, 6 for a 6-person table)
+Max 1 sideboard / buffet unit
+
+Kitchen:
+
+Max 1 refrigerator
+Max 1 stove / oven
+Max 1 sink
+Max 1 dishwasher
+Counter/cabinet runs should follow the existing kitchen zone shape — do not add freestanding kitchen islands unless the space clearly supports one
+Max 1 kitchen island (only if space allows)
+
+Hallway / Entryway:
+
+Max 1 shoe rack or entry bench
+Max 1 coat rack or small console table
+Do not overcrowd — hallways must remain clear for circulation
+
+Laundry area (if present):
+
+Max 1 washing machine
+Max 1 dryer (or 1 stacked washer-dryer combo)
+
+Important constraints
+
+Furniture must be dimensionally believable and fit the space.
+Leave comfortable walking space between items.
+Do not overcrowd rooms.
+Respect door swings and movement paths.
+Keep the result minimal, modern, and livable.
+If a room is too small to fit all typical items, leave some out rather than forcing them in.
+
+Output style
+
+2D floor plan only
+top-down
+architectural / plan-view graphic
+clean linework
+ALL furniture shown as plain rectangles only — no furniture icons, no symbolic drawings, no internal detail whatsoever
+each rectangle labeled with its numeric ID — the legend identifies what it is
+no shadows
+no rendering
+no perspective
+no decorative illustration style
+no random textures
+no invented rooms or walls
+must include a numbered legend/key for all furniture items
+
+Priority
+The highest priority is to keep the original plan structure and visual layout language unchanged, and only enrich it with sensible modern furniture placement. All furniture must be shown exclusively as plain labeled rectangles with zero internal detail — identification comes solely from the numbered legend. Never exceed the per-room item limits listed above.
