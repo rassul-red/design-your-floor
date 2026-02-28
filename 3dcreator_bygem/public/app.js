@@ -256,8 +256,15 @@ Some additional info:
             const responseText = document.getElementById('geminiResponseText');
             const responseImage = document.getElementById('geminiResponseImage');
 
-            // Save system prompt
+            // Save prompts
             localStorage.setItem('geminiSystemPrompt', sysPrompt);
+            localStorage.setItem('geminiFurniturePrompt', furnitureTextarea.value);
+
+            // Append furniture prompt if checked
+            let fullSystemPrompt = sysPrompt;
+            if (furnitureCheck.checked && furnitureTextarea.value.trim()) {
+                fullSystemPrompt += '\n\nFurniture instructions:\n' + furnitureTextarea.value.trim();
+            }
 
             btn.innerText = '✨ Enhancing...';
             btn.disabled = true;
@@ -274,7 +281,7 @@ Some additional info:
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        systemPrompt: sysPrompt,
+                        systemPrompt: fullSystemPrompt,
                         userPrompt: userPrompt,
                         image: imageSrc,
                         referenceImages: referenceImages.map(r => r.dataURL)
