@@ -197,6 +197,8 @@ Some additional info:
         const refInput = document.getElementById('referenceImageInput');
         const clearRefBtn = document.getElementById('clearReferenceImages');
         const downloadBtn = document.getElementById('downloadResponseBtn');
+        const searchFurnitureBtn = document.getElementById('searchFurnitureBtn');
+        const furnitureSearchResults = document.getElementById('furnitureSearchResults');
         const iterateBtn = document.getElementById('iterateBtn');
 
         function renderRefThumbnails() {
@@ -267,6 +269,45 @@ Some additional info:
             document.getElementById('modal-content').scrollTop = 0;
         });
 
+        // Search Furniture — sends generated image to Gemini to find shopping links
+        searchFurnitureBtn.addEventListener('click', async () => {
+            const imgSrc = document.getElementById('geminiResponseImage').src;
+            if (!imgSrc) return;
+
+            searchFurnitureBtn.innerText = '🔍 Searching...';
+            searchFurnitureBtn.disabled = true;
+            furnitureSearchResults.classList.add('hidden');
+            furnitureSearchResults.innerHTML = '';
+
+            try {
+                const res = await fetch('/api/search-furniture', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imgSrc })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Server error');
+
+                let html = '<h4 style="margin: 0 0 8px 0; font-size: 14px;">🛋 Found Furniture:</h4>';
+                data.results.forEach(item => {
+                    html += `<div style="margin-bottom: 10px; padding: 8px; background: white; border-radius: 4px; border: 1px solid #ddd;">
+                        <strong>${item.name}</strong>
+                        <p style="margin: 4px 0; font-size: 12px; color: #555;">${item.description}</p>
+                        <a href="${item.shoppingUrl}" target="_blank" style="font-size: 12px; color: #2196F3; text-decoration: none;">🛒 Search on Google Shopping</a>
+                    </div>`;
+                });
+                furnitureSearchResults.innerHTML = html;
+                furnitureSearchResults.classList.remove('hidden');
+            } catch (error) {
+                console.error('Furniture search error:', error);
+                furnitureSearchResults.innerHTML = `<p style="color: red; margin: 0;">Error: ${error.message}</p>`;
+                furnitureSearchResults.classList.remove('hidden');
+            } finally {
+                searchFurnitureBtn.innerText = '🔍 Search Furniture';
+                searchFurnitureBtn.disabled = false;
+            }
+        });
+
         document.getElementById('geminiEnhanceBtn').addEventListener('click', async () => {
             const sysPrompt = document.getElementById('geminiSystemPrompt').value;
             const userPrompt = document.getElementById('geminiUserPrompt').value;
@@ -292,6 +333,8 @@ Some additional info:
             responseText.classList.add('hidden');
             responseImage.classList.add('hidden');
             downloadBtn.classList.add('hidden');
+            searchFurnitureBtn.classList.add('hidden');
+            furnitureSearchResults.classList.add('hidden');
             iterateBtn.classList.add('hidden');
             responseText.innerText = '';
             responseImage.src = '';
@@ -318,6 +361,7 @@ Some additional info:
                     responseImage.src = data.result;
                     responseImage.classList.remove('hidden');
                     downloadBtn.classList.remove('hidden');
+                    searchFurnitureBtn.classList.remove('hidden');
                     iterateBtn.classList.remove('hidden');
                 } else {
                     responseText.innerText = data.result;

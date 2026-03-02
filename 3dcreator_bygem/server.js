@@ -3,8 +3,8 @@ const express = require('express');
 const { GoogleGenAI } = require('@google/genai');
 
 const app = express();
-app.use(express.static('public'));
 app.use(express.json({ limit: '100mb' }));
+app.use(express.static('public'));
 
 app.post('/api/enhance', async (req, res) => {
     try {
@@ -114,6 +114,55 @@ app.post('/api/enhance', async (req, res) => {
     } catch (error) {
         console.error("Error calling Gemini API:", error);
         res.status(500).json({ error: error.message || "Failed to process image with Gemini." });
+    }
+});
+
+app.post('/api/search-furniture', async (req, res) => {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+            return res.status(401).json({ error: "Gemini API key is not configured in .env file." });
+        }
+
+        const { image } = req.body;
+        if (!image || !image.startsWith('data:image/')) {
+            return res.status(400).json({ error: "Invalid image data provided." });
+        }
+
+        const ai = new GoogleGenAI({ apiKey });
+        const base64Data = image.split(',')[1];
+        const mimeType = image.match(/^data:(image\/\w+);/)?.[1] || 'image/png';
+
+        const prompt = `Analyze this room. Identify the 3 most prominent furniture items.
+Return ONLY a JSON list of objects with these keys:
+"item_name": name of the object
+"specific_description": colors, materials, style
+"shopping_query": a precise search string to find this exact item on Google Shopping`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: [
+                { text: prompt },
+                { inlineData: { data: base64Data, mimeType } }
+            ],
+            config: {
+                responseMimeType: 'application/json'
+            }
+        });
+
+        const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text || '[]';
+        const products = JSON.parse(text);
+
+        const results = products.map(item => ({
+            name: item.item_name,
+            description: item.specific_description,
+            shoppingUrl: `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(item.shopping_query)}`
+        }));
+
+        res.json({ results });
+    } catch (error) {
+        console.error("Error in search-furniture:", error);
+        res.status(500).json({ error: error.message || "Failed to analyze furniture." });
     }
 });
 

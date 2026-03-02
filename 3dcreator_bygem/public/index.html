@@ -107,11 +107,13 @@
           <label style="font-size: 14px; font-weight: bold;">Gemini Output:</label>
           <div style="display: flex; gap: 8px;">
             <button id="downloadResponseBtn" class="hidden" style="background: #4CAF50; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; margin: 0;">⬇ Download</button>
+            <button id="searchFurnitureBtn" class="hidden" style="background: #2196F3; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; margin: 0;">🔍 Search Furniture</button>
             <button id="iterateBtn" class="hidden" style="background: linear-gradient(45deg, #ff9800, #f44336); color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; width: auto; margin: 0;">🔄 Edit This Image</button>
           </div>
         </div>
         <div id="geminiResponseText" style="width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #9c27b0; border-radius: 4px; background: #fdf5ff; white-space: pre-wrap; font-family: sans-serif; font-size: 14px; max-height: 200px; overflow-y: auto;"></div>
         <img id="geminiResponseImage" class="hidden" src="" style="width: 100%; max-height: 400px; object-fit: contain; border: 1px solid #9c27b0; border-radius: 4px; margin-top: 10px;">
+        <div id="furnitureSearchResults" class="hidden" style="margin-top: 10px; padding: 12px; border: 1px solid #2196F3; border-radius: 4px; background: #f0f7ff;"></div>
       </div>
     </div>
   </div>
