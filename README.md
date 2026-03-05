@@ -28,7 +28,9 @@ Floor Plan App is an **end-to-end interior design pipeline** that turns a rough 
 
 
 
-https://github.com/user-attachments/assets/15f20ce7-7acb-449f-98fe-9361fa0615bb
+
+https://github.com/user-attachments/assets/c0a8b402-8491-4adc-9f6b-93b6b8436b95
+
 
 
 
