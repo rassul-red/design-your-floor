@@ -1,0 +1,12 @@
+# furnitureplacement — fast pipeline
+fastapi
+uvicorn[standard]
+python-dotenv
+google-genai
+Pillow
+matplotlib
+shapely
+geopandas
+numpy
+networkx
+opencv-python>=4.8.0

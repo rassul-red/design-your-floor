@@ -1,0 +1,72 @@
+You are a floor plan analyst examining a furnished room image.
+
+=== ROOM CONTEXT ===
+Room type      : {room_type}
+Room area      : {area_m2:.2f} m²
+Room width     : {room_w_m:.2f} m  (x direction)
+Room height    : {room_h_m:.2f} m  (y direction)
+Adjacent walls : {wall_count}
+Doors          : {door_count}
+Windows        : {window_count}
+
+=== YOUR COORDINATE FRAME — READ THIS CAREFULLY ===
+You must report all positions relative to the COLORED ROOM POLYGON ONLY.
+Ignore the title, legend, dimension labels, and white background entirely.
+The reference box is the tight bounding box of the colored room shape:
+
+  x_frac = 0.0  →  LEFT  edge of the colored room polygon
+  x_frac = 1.0  →  RIGHT edge of the colored room polygon
+  y_frac = 0.0  →  TOP   edge of the colored room polygon  (as seen in the image)
+  y_frac = 1.0  →  BOTTOM edge of the colored room polygon (as seen in the image)
+
+x_frac and y_frac are the CENTER of the furniture bounding box.
+w_frac and h_frac are the WIDTH and HEIGHT as fractions of the room polygon bbox.
+
+=== WALL-CONTACT RULES (critical for accuracy) ===
+If a furniture item is TOUCHING or FLUSH against a wall, its edge must land
+exactly on the corresponding room boundary:
+
+  Touching LEFT wall  → x_frac - w_frac/2 = 0.0   (left edge at 0)
+  Touching RIGHT wall → x_frac + w_frac/2 = 1.0   (right edge at 1)
+  Touching TOP wall   → y_frac - h_frac/2 = 0.0   (top edge at 0)
+  Touching BOTTOM wall→ y_frac + h_frac/2 = 1.0   (bottom edge at 1)
+
+Items against a corner touch TWO edges simultaneously.
+Items floating in the room have all four values strictly between 0 and 1.
+
+=== REASONING STEP (think before giving numbers) ===
+For EACH furniture item, reason out loud:
+
+1. Which wall(s) or corner does it touch, if any?
+   e.g. "flush against the left wall", "in the bottom-right corner"
+
+2. Where is its center relative to the room?
+   e.g. "roughly centred horizontally, upper third vertically"
+   → approximate x_frac, y_frac
+
+3. How large is it relative to the room?
+   The room is {room_w_m:.2f} m wide × {room_h_m:.2f} m tall.
+   e.g. "a double bed is ~1.6 m wide in a {room_w_m:.2f} m room, so w_frac ≈ {bed_w_frac:.2f}"
+   → approximate w_frac, h_frac
+
+4. Apply wall-contact rules: if it touches a wall, snap that edge exactly.
+
+Then commit to final numbers.
+
+=== ALLOWED FURNITURE TYPE NAMES (lowercase, exact) ===
+  bed, bedside table, wardrobe, sofa, coffee table, tv unit,
+  counter, fridge, stove, kitchen sink, dining table, dining chair,
+  toilet, bathroom sink, shower, bathtub, shoe rack, console
+
+=== OUTPUT FORMAT ===
+First write your step-by-step reasoning as plain text (one paragraph per item).
+Then output a single JSON array wrapped in <json> </json> tags:
+
+<json>
+[
+  {{"type": "bed", "x_frac": 0.50, "y_frac": 0.15, "w_frac": 0.55, "h_frac": 0.28}},
+  {{"type": "wardrobe", "x_frac": 0.90, "y_frac": 0.50, "w_frac": 0.18, "h_frac": 0.60}}
+]
+</json>
+
+If no furniture is visible: <json>[]</json>
