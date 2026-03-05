@@ -26,6 +26,12 @@
 
 Floor Plan App is an **end-to-end interior design pipeline** that turns a rough room sketch into a photorealistic, furnished space — with links to buy every piece of furniture shown.
 
+
+
+https://github.com/user-attachments/assets/15f20ce7-7acb-449f-98fe-9361fa0615bb
+
+
+
 ```
    ✏️  Draw rooms          🧊  Walk through 3D        🛋️  AI furnishes rooms
   ┌─────────────┐         ┌──────────────────┐        ┌──────────────────────┐
